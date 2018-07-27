@@ -156,6 +156,8 @@
             if (this.IsLoaded) {
                 this.AdjustToScreen();
                 Debug.WriteLine($"adjust caused by {callerName}");
+            } else {
+                Debug.WriteLine($"adjust caused by {callerName} was cancelled, because IsLoaded == false");
             }
         }
 
@@ -172,31 +174,36 @@
                     return;
 
                 double opacity = this.Opacity;
-                var visibility = this.Visibility;
-                if (visibility != Visibility.Visible) {
-                    this.Opacity = 0;
+                try {
+                    var visibility = this.Visibility;
+                    if (visibility != Visibility.Visible) {
+                        this.Opacity = 0;
+                        try {
+                            this.Show();
+                        } catch (InvalidOperationException) {
+                            await Task.Delay(400);
+                            continue;
+                        }
+                    }
+
+                    Debug.WriteLine($"adjusting {this.Title} to {this.Screen.WorkingArea}");
+                    if (!this.Screen.IsActive
+                        || !await WindowExtensions.AdjustToClientArea(this, this.Screen)) {
+                        await Task.Delay(400);
+                        continue;
+                    }
+
                     try {
-                        this.Show();
+                        this.Visibility = visibility;
                     } catch (InvalidOperationException) {
                         await Task.Delay(400);
                         continue;
                     }
+
+                } finally {
+                    this.Opacity = opacity;
                 }
 
-                Debug.WriteLine($"adjusting {this.Title} to {this.Screen.WorkingArea}");
-                if (!this.Screen.IsActive || !await WindowExtensions.AdjustToClientArea(this, this.Screen)) {
-                    await Task.Delay(400);
-                    continue;
-                }
-
-                try {
-                    this.Visibility = visibility;
-                } catch (InvalidOperationException) {
-                    await Task.Delay(400);
-                    continue;
-                }
-
-                this.Opacity = opacity;
                 this.windowPositioned = true;
                 this.InvalidateMeasure();
                 this.Layout?.InvalidateMeasure();
