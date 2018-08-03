@@ -7,6 +7,7 @@
     using System.Linq;
     using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
+    using System.Threading;
     using System.Threading.Tasks;
     using System.Windows;
     using System.Windows.Interop;
@@ -147,15 +148,24 @@
         }
 
         Task idleAdjustDelay;
+        Task inProgressAdjustment;
         async void AdjustToScreenWhenIdle([CallerMemberName] string callerName = null) {
-            var delay = Task.Delay(millisecondsDelay: 500);
+            Debug.WriteLine($"adjust on {this.Title}: delayed adjustment requested by {callerName}");
+            if (this.inProgressAdjustment != null)
+                Debug.WriteLine($"adjust on {this.Title}: in-progress: {this.inProgressAdjustment.Id}");
+            var delay = Task.WhenAll(Task.Delay(millisecondsDelay: 500), this.loaded.Task, this.inProgressAdjustment ?? Task.CompletedTask);
             this.idleAdjustDelay = delay;
-            await Task.WhenAll(delay, this.loaded.Task);
+            await delay;
+            // if a new delayed adjustment was requested, drop this one
             if (delay != this.idleAdjustDelay)
                 return;
+            Debug.WriteLine($"adjust on {this.Title}: idle delay {delay.Id} completed");
             if (this.IsLoaded) {
-                this.AdjustToScreen();
-                Debug.WriteLine($"adjust caused by {callerName}");
+                Debug.WriteLine($"adjust on {this.Title} caused by {callerName}, thread {Thread.CurrentThread.ManagedThreadId}");
+                Debug.Assert(this.inProgressAdjustment == null);
+                this.inProgressAdjustment = this.AdjustToScreen();
+                Debug.WriteLine($"adjust on {this.Title}: started adjustment {this.inProgressAdjustment.Id}");
+                await this.inProgressAdjustment;
             } else {
                 Debug.WriteLine($"adjust caused by {callerName} was cancelled, because IsLoaded == false");
             }
@@ -167,58 +177,77 @@
         /// Completes, when this instance is adjusted to the screen, and some layout is loaded
         /// </summary>
         public Task Ready => this.ready.Task;
-        async void AdjustToScreen()
+        async Task AdjustToScreen()
         {
-            for (int retry = 0; retry < 8; retry++) {
-                if (this.Screen == null || !this.IsHandleInitialized)
-                    return;
+            var visibility = this.Visibility;
+            Debug.WriteLine($"adjusting {this.Title} to {this.Screen.WorkingArea}");
+            await Task.Yield();
+            try {
+                for (int retry = 0; retry < 8; retry++) {
+                    if (this.Screen == null || !this.IsHandleInitialized)
+                        return;
 
-                double opacity = this.Opacity;
-                try {
-                    var visibility = this.Visibility;
-                    if (visibility != Visibility.Visible) {
-                        this.Opacity = 0;
+                    double opacity = this.Opacity;
+                    try {
+                        if (this.Visibility != Visibility.Visible) {
+                            Debug.WriteLine($"opacity 0 on {this.Title}");
+                            this.Opacity = 0;
+                            try {
+                                this.Show();
+                            } catch (InvalidOperationException) {
+                                await Task.Delay(400);
+                                continue;
+                            }
+                        }
+
+                        Debug.WriteLine(
+                            $"adjusting[{retry}] {this.Title} to {this.Screen.WorkingArea}");
+                        if (!this.Screen.IsActive
+                            || !await WindowExtensions.AdjustToClientArea(this, this.Screen)) {
+                            await Task.Delay(400);
+                            continue;
+                        }
+
                         try {
-                            this.Show();
+                            this.Visibility = visibility;
                         } catch (InvalidOperationException) {
                             await Task.Delay(400);
                             continue;
                         }
+
+                    } finally {
+                        Debug.WriteLine($"restoring opacity on {this.Title}");
+                        this.Opacity = opacity;
                     }
 
-                    Debug.WriteLine($"adjusting {this.Title} to {this.Screen.WorkingArea}");
-                    if (!this.Screen.IsActive
-                        || !await WindowExtensions.AdjustToClientArea(this, this.Screen)) {
+                    this.windowPositioned = true;
+                    this.InvalidateMeasure();
+                    this.Layout?.InvalidateMeasure();
+
+                    if (Math.Abs((double)(this.RenderSize.Width - this.Width)) < 10
+                        && Math.Abs((double)(this.RenderSize.Height - this.Height)) < 10) {
+                        if (this.Layout != null) {
+                            await Task.Yield();
+                            this.ready.TrySetResult(true);
+                        }
+
+                        Debug.WriteLine($"adjusted {this.Title}");
+                        return;
+                    } else
                         await Task.Delay(400);
-                        continue;
-                    }
-
-                    try {
+                }
+            } finally {
+                this.inProgressAdjustment = null;
+                try {
+                    if (this.Visibility != visibility)
                         this.Visibility = visibility;
-                    } catch (InvalidOperationException) {
-                        await Task.Delay(400);
-                        continue;
-                    }
-
-                } finally {
-                    this.Opacity = opacity;
+                } catch (InvalidOperationException) {
+                    Debug.WriteLine("failed to restore layout window visibility");
                 }
-
-                this.windowPositioned = true;
-                this.InvalidateMeasure();
-                this.Layout?.InvalidateMeasure();
-
-                if (Math.Abs((double)(this.RenderSize.Width - this.Width)) < 10
-                    && Math.Abs((double)(this.RenderSize.Height - this.Height)) < 10) {
-                    if (this.Layout != null) {
-                        await Task.Yield();
-                        this.ready.TrySetResult(true);
-                    }
-                    return;
-                }
-                else
-                    await Task.Delay(400);
+                Debug.WriteLine($"adjustment finalized {this.Title}");
             }
+
+            Debug.WriteLine($"adjusting failed: {this.Title}");
         }
 
         public bool TryShow() {
