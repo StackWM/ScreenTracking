@@ -24,8 +24,6 @@
         {
             this.DataContextChanged += this.OnDataContextChanged;
             this.Loaded += this.OnLoaded;
-            // this also makes window to be visible on all virtual desktops
-            this.SetIsListedInTaskSwitcher(false);
             SystemEvents.SessionSwitch += this.OnSessionSwitch;
         }
 
@@ -57,6 +55,9 @@
 
         readonly TaskCompletionSource<bool> loaded = new TaskCompletionSource<bool>();
         void OnLoaded(object sender, EventArgs e) {
+            // this also makes window to be visible on all virtual desktops
+            this.SetIsListedInTaskSwitcher(false);
+
             this.AdjustToScreenWhenIdle();
             this.loaded.TrySetResult(true);
         }
