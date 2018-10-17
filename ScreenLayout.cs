@@ -216,6 +216,8 @@
                             continue;
                         }
 
+                    } catch (WindowNotFoundException) {
+                        continue;
                     } finally {
                         Debug.WriteLine($"restoring opacity on {this.Title}");
                         this.Opacity = opacity;
