@@ -25,6 +25,7 @@
             this.DataContextChanged += this.OnDataContextChanged;
             this.Loaded += this.OnLoaded;
             SystemEvents.SessionSwitch += this.OnSessionSwitch;
+            SystemEvents.DisplaySettingsChanged += this.OnDisplaySettingsChanged;
         }
 
         public Task<bool> SetLayout(FrameworkElement layout) {
@@ -82,6 +83,7 @@
             return IntPtr.Zero;
         }
 
+        void OnDisplaySettingsChanged(object sender, EventArgs e) => this.AdjustToScreenWhenIdle();
         void OnSessionSwitch(object sender, SessionSwitchEventArgs e) {
             switch (e.Reason) {
             case SessionSwitchReason.ConsoleConnect:
