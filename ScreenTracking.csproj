@@ -19,7 +19,6 @@
     <Page Include="**\*.xaml" SubType="Designer" Generator="MSBuild:Compile" />
     <ProjectReference Include="..\Screen.WPF\Screen.csproj" />
     <ProjectReference Include="..\WindowManagement.WPF\WindowManagement.WPF.csproj" />
-    <ProjectReference Include="..\WindowManagement\WindowManagement.csproj" />
     <Compile Update="**\*.xaml.cs" SubType="Designer" DependentUpon="%(Filename)" />
   </ItemGroup>
 
