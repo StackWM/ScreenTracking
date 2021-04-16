@@ -17,6 +17,10 @@
 
   <ItemGroup>
     <Page Include="**\*.xaml" SubType="Designer" Generator="MSBuild:Compile" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <ProjectReference Include="..\Screen.WPF\Screen.csproj" />
     <ProjectReference Include="..\WindowManagement.WPF\WindowManagement.WPF.csproj" />
     <Compile Update="**\*.xaml.cs" SubType="Designer" DependentUpon="%(Filename)" />
