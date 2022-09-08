@@ -1,4 +1,5 @@
-﻿namespace LostTech.Stack.ScreenTracking
+﻿#nullable enable
+namespace LostTech.Stack.ScreenTracking
 {
     using System;
     using System.Collections.Generic;
@@ -18,7 +19,7 @@
 
     public class ScreenLayout: Window
     {
-        HwndSource handle;
+        HwndSource? handle;
 
         public ScreenLayout()
         {
@@ -44,7 +45,7 @@
             return readiness.Task;
         }
 
-        public FrameworkElement Layout => this.Content as FrameworkElement;
+        public FrameworkElement? Layout => this.Content as FrameworkElement;
 
         protected override void OnSourceInitialized(EventArgs e)
         {
@@ -95,8 +96,8 @@
             }
         }
 
-        Win32Screen lastScreen;
-        public Win32Screen Screen => this.ViewModel?.Screen;
+        Win32Screen? lastScreen;
+        public Win32Screen? Screen => this.ViewModel?.Screen;
 
         public IScreenLayoutViewModel ViewModel {
             get => (IScreenLayoutViewModel)this.DataContext;
@@ -112,7 +113,7 @@
             }
         }
 
-        void SetScreen(Win32Screen newScreen) {
+        void SetScreen(Win32Screen? newScreen) {
             if (this.lastScreen == newScreen)
                 return;
 
@@ -151,9 +152,9 @@
             this.AdjustToScreenWhenIdle();
         }
 
-        Task idleAdjustDelay;
-        Task inProgressAdjustment;
-        async void AdjustToScreenWhenIdle([CallerMemberName] string callerName = null) {
+        Task? idleAdjustDelay;
+        Task? inProgressAdjustment;
+        async void AdjustToScreenWhenIdle([CallerMemberName] string? callerName = null) {
             Debug.WriteLine($"adjust on {this.Title}: delayed adjustment requested by {callerName}");
             if (this.inProgressAdjustment != null)
                 Debug.WriteLine($"adjust on {this.Title}: in-progress: {this.inProgressAdjustment.Id}");
@@ -184,7 +185,7 @@
         async Task AdjustToScreen()
         {
             var visibility = this.Visibility;
-            Debug.WriteLine($"adjusting {this.Title} to {this.Screen.WorkingArea}");
+            Debug.WriteLine($"adjusting {this.Title} to {this.Screen?.WorkingArea}");
             await Task.Yield();
             try {
                 for (int retry = 0; retry < 8; retry++) {
@@ -299,6 +300,6 @@
     static class ScreenLayoutExtensions
     {
         public static IEnumerable<ScreenLayout> Active(this IEnumerable<ScreenLayout> layouts)
-            => layouts.Where(layout => layout.Screen.IsActive);
+            => layouts.Where(layout => layout.Screen?.IsActive == true);
     }
 }
