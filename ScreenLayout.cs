@@ -32,6 +32,7 @@
             layout.Width = layout.Height = double.NaN;
             this.Content = layout;
             var readiness = new TaskCompletionSource<bool>();
+            SetScreenLayoutReadiness(layout, readiness);
 
             layout.Loaded += delegate {
                 if (this.windowPositioned) {
@@ -231,9 +232,11 @@
 
                     if (Math.Abs((double)(this.RenderSize.Width - this.Width)) < 10
                         && Math.Abs((double)(this.RenderSize.Height - this.Height)) < 10) {
-                        if (this.Layout != null) {
+                        var layout = this.Layout;
+                        if (layout is not null) {
                             await Task.Yield();
                             this.ready.TrySetResult(true);
+                            GetScreenLayoutReadiness(layout)?.TrySetResult(true);
                         }
 
                         Debug.WriteLine($"adjusted {this.Title}");
@@ -254,6 +257,21 @@
 
             Debug.WriteLine($"adjusting failed: {this.Title}");
         }
+
+        #region Readiness
+        internal static readonly DependencyPropertyKey ScreenLayoutReadinessPropertyKey =
+            DependencyProperty.RegisterAttachedReadOnly("ScreenLayoutReadiness", typeof(TaskCompletionSource<bool>), typeof(FrameworkElement), new PropertyMetadata(null));
+        public static readonly DependencyProperty ScreenLayoutReadinessProperty = ScreenLayoutReadinessPropertyKey.DependencyProperty;
+        public static TaskCompletionSource<bool> GetScreenLayoutReadiness(DependencyObject obj) {
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            return (TaskCompletionSource<bool>)obj.GetValue(ScreenLayoutReadinessProperty);
+        }
+        internal static void SetScreenLayoutReadiness(DependencyObject obj, TaskCompletionSource<bool> value) {
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            obj.SetValue(ScreenLayoutReadinessPropertyKey, value);
+        }
+
+        #endregion
 
         public bool TryShow() {
             if (!this.IsHandleInitialized)

@@ -4,6 +4,7 @@
     <TargetFramework>net462</TargetFramework>
     <AssemblyName>LostTech.Stack.ScreenTracking</AssemblyName>
     <RootNamespace>LostTech.Stack.ScreenTracking</RootNamespace>
+    <LangVersion>10.0</LangVersion>
     <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
     <Deterministic>False</Deterministic>
     <LanguageTargets>$(MSBuildBinPath)\Microsoft.CSharp.targets</LanguageTargets>
