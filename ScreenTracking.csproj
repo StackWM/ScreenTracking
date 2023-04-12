@@ -4,10 +4,20 @@
     <TargetFramework>net462</TargetFramework>
     <AssemblyName>LostTech.Stack.ScreenTracking</AssemblyName>
     <RootNamespace>LostTech.Stack.ScreenTracking</RootNamespace>
-    <LangVersion>10.0</LangVersion>
+    <LangVersion>11.0</LangVersion>
     <GenerateAssemblyInfo>False</GenerateAssemblyInfo>
     <Deterministic>False</Deterministic>
     <LanguageTargets>$(MSBuildBinPath)\Microsoft.CSharp.targets</LanguageTargets>
+
+    <!-- Package stuff -->
+    <!--<PackageLicenseFile>LICENSE</PackageLicenseFile>-->
+    <!--<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>-->
+
+    <!-- The following is recommended for public projects -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <DebugSymbols>true</DebugSymbols>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,13 +27,23 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Page Include="**\*.xaml" SubType="Designer" Generator="MSBuild:Compile" />
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+
+    <!-- The following is recommended for public projects -->
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Screen.WPF\Screen.csproj" />
     <ProjectReference Include="..\WindowManagement.WPF\WindowManagement.WPF.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Include="**\*.xaml" SubType="Designer" Generator="MSBuild:Compile" />
+
     <Compile Update="**\*.xaml.cs" SubType="Designer" DependentUpon="%(Filename)" />
   </ItemGroup>
 
